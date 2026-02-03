@@ -70,3 +70,8 @@ htmlcov/
 *.bak
 *.tmp
 .cache/
+.claude/
+
+# Product KPIs specific
+cache/
+output/
