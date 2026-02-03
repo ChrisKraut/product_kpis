@@ -71,3 +71,7 @@ htmlcov/
 *.tmp
 .cache/
 .claude/
+
+# Product KPIs specific
+cache/
+output/

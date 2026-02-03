@@ -4,11 +4,19 @@ Store and retrieve the database URL in the system keychain (macOS Keychain).
 Use this so you don't have to enter the DB URL every time you run scripts
 that need a database connection.
 """
-import keyring
+
 from typing import Optional
+
+import keyring
 
 SERVICE_NAME = "product_kpis"
 DB_URL_KEY = "db_url"
+
+
+class KeychainAccessError(Exception):
+    """Raised when keychain access fails."""
+
+    pass
 
 # In-memory cache to avoid repeated keychain access in the same process
 _db_url_cache: Optional[str] = None
@@ -18,27 +26,30 @@ def get_db_url() -> str:
     """
     Get the database URL from the keychain.
 
-    If no URL is stored, prompts the user to enter it and then stores it
-    in the keychain for future use.
-
     Returns:
         The database URL (e.g. postgresql://user:password@host:5432/dbname).
 
     Raises:
-        ValueError: If keychain access fails or stored value is invalid.
+        ValueError: If no URL is stored or keychain access fails.
     """
     global _db_url_cache
 
     if _db_url_cache is not None:
         return _db_url_cache
 
-    url = keyring.get_password(SERVICE_NAME, DB_URL_KEY)
+    try:
+        url = keyring.get_password(SERVICE_NAME, DB_URL_KEY)
+    except keyring.errors.KeyringError as e:
+        raise KeychainAccessError(
+            "Cannot access keychain. Grant permission in System Preferences → "
+            "Security & Privacy → Privacy → Full Disk Access.\n"
+            f"Details: {e}"
+        ) from e
 
     if not url or not url.strip():
-        url = _prompt_and_store_db_url()
-
-    if not url or not url.strip():
-        raise ValueError("Database URL is required. Run this script and enter a URL to store it in the keychain.")
+        raise ValueError(
+            "No database URL stored. Use Settings → Set database URL to configure."
+        )
 
     _db_url_cache = url.strip()
     return _db_url_cache
@@ -50,6 +61,9 @@ def set_db_url(url: str) -> None:
 
     Args:
         url: Full database URL (e.g. postgresql://user:password@host:5432/dbname).
+
+    Raises:
+        ValueError: If URL is empty.
     """
     global _db_url_cache
 
@@ -77,29 +91,26 @@ def has_db_url() -> bool:
     return bool(url and url.strip())
 
 
-def _prompt_and_store_db_url() -> Optional[str]:
-    """Prompt the user for the DB URL and offer to store it. Returns the URL or None."""
-    print("No database URL found in keychain.")
-    url = input("Enter database URL (e.g. postgresql://user:password@host:5432/dbname): ").strip()
-    if not url:
-        return None
-    store = input("Store in keychain for future use? [Y/n]: ").strip().lower()
-    if store in ("", "y", "yes"):
-        set_db_url(url)
-        print("Database URL stored in keychain.")
+def get_masked_url() -> str:
+    """
+    Get a masked version of the stored URL for display.
+
+    Returns:
+        URL with password masked, or message if no URL stored.
+    """
+    if not has_db_url():
+        return "No database URL stored."
+
+    url = get_db_url()
+
+    # Mask password for display
+    if "@" in url and "://" in url:
+        prefix, rest = url.split("://", 1)
+        if "@" in rest:
+            user_part, host_part = rest.rsplit("@", 1)
+            if ":" in user_part:
+                user, _ = user_part.split(":", 1)
+                user_part = f"{user}:****"
+            return f"{prefix}://{user_part}@{host_part}"
+
     return url
-
-
-if __name__ == "__main__":
-    if has_db_url():
-        print("A database URL is already stored in the keychain.")
-        change = input("Overwrite? [y/N]: ").strip().lower()
-        if change not in ("y", "yes"):
-            print("Done.")
-            exit(0)
-    url = input("Enter database URL: ").strip()
-    if not url:
-        print("No URL entered.")
-        exit(1)
-    set_db_url(url)
-    print("Database URL stored in keychain.")
