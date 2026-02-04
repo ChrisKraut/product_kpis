@@ -1,0 +1,15 @@
+{
+  "action_types": [
+    "export_fulfillment_create",
+    "export_parcel_perform_tracking",
+    "export_order_status",
+    "export_stock_update",
+    "export_product_update",
+    "export_fulfillment_update",
+    "export_fulfillment_cancellation",
+    "export_transfer_create",
+    "export_return_announcement",
+    "export_product_create",
+    "export_transfer_update"
+  ]
+}

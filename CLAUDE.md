@@ -3,6 +3,8 @@
 Auto-generated from feature plans. Last updated: 2026-02-03
 
 ## Active Technologies
+- Python 3.11+ + SQLAlchemy 2.0+, psycopg2-binary 2.9+ (002-first-time-right-exports)
+- PostgreSQL (existing production database) (002-first-time-right-exports)
 
 - **Python 3.11+** with SQLAlchemy 2.0+, keyring 24+, psycopg2-binary 2.9+
 
@@ -93,3 +95,6 @@ class MyKPI(BaseKPI):
 <!-- MANUAL ADDITIONS START -->
 <!-- Add custom guidelines below this line -->
 <!-- MANUAL ADDITIONS END -->
+
+## Recent Changes
+- 002-first-time-right-exports: Added Python 3.11+ + SQLAlchemy 2.0+, psycopg2-binary 2.9+
